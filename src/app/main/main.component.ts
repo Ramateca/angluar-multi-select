@@ -21,7 +21,7 @@ export class MainComponent {
   ];
 
   group = new FormGroup({
-    first: new FormControl<{}>({}),
+    first: new FormControl(),
     last: new FormControl('Drew'),
   });
   
