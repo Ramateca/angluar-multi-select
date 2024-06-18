@@ -1,5 +1,12 @@
-<select multiple>
-  @for (option of options; track option) {
-  <option [value]="option.value">{{ option.label }}</option>
-  }
-</select>
+<form [formGroup]="group">
+
+  <select multiple formControlName="first">
+    @for (option of options; track option) {
+    <option [value]="option.value">{{ option.label }}</option>
+    }
+  </select>
+
+  <input type="text" formControlName="last"/> 
+
+  <button type="submit" (click)="formDisplay()" class="btn btn-primary">leggi form</button>
+</form>

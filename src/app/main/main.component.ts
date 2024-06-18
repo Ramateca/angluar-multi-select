@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MultiSelectModule } from '../multi-select/multi-select.module';
 
 @Component({
   selector: 'app-main',
   standalone: true,
-  imports: [MultiSelectModule],
+  imports: [MultiSelectModule, ReactiveFormsModule, FormsModule],
   templateUrl: './main.component.html',
   styleUrl: './main.component.scss',
 })
@@ -20,8 +20,12 @@ export class MainComponent {
     { label: 'ilario', value: 7 },
   ];
 
-  control = new FormGroup({
+  group = new FormGroup({
     first: new FormControl([]),
     last: new FormControl('Drew'),
   });
+
+  formDisplay(): void {
+    console.log("prova",this.group.getRawValue());
+  }
 }
