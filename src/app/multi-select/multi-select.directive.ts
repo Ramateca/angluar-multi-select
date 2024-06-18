@@ -29,7 +29,6 @@ export class MultiSelectDiverctive {
       let multiSelect = this.viewContainerRef.createComponent(MultiSelectComponent);
       multiSelect.instance.fromSelect = true;
       multiSelect.instance.fromSelectOptions = this.options;
-      console.log(this.options());
       if (maybeFormControlName && maybeFormControlName.trim() !== "") multiSelect.instance.formcontrolname = maybeFormControlName;
       this.select.nativeElement.parentNode?.removeChild(template);
     }

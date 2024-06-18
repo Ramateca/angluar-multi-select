@@ -30,8 +30,6 @@ export class MainComponent {
   }
 
   formDisplay(): void {
-    console.log("prova",this.group.getRawValue());
     this.options.pop();
-    console.log(this.options)
   }
 }
