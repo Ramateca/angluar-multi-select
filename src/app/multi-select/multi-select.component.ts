@@ -1,29 +1,37 @@
 import {
-  Attribute,
   Component,
   ContentChildren,
   ElementRef,
   QueryList,
+  Signal,
+  ViewChild,
   WritableSignal,
+  computed,
+  contentChildren,
   effect,
   forwardRef,
   signal,
 } from '@angular/core';
-import { OptionDirective } from './option.directive';
+import { HTMLOptionElementWithAnyValueType } from './option.directive';
 import {
+  AsyncValidator,
+  AsyncValidatorFn,
+  ControlContainer,
   ControlValueAccessor,
   FormControl,
   FormControlName,
-  FormGroup,
   FormGroupDirective,
   NG_VALUE_ACCESSOR,
-  NgControl,
+  ReactiveFormsModule,
+  Validator,
+  ValidatorFn,
 } from '@angular/forms';
+import { JsonPipe } from '@angular/common';
 
 @Component({
   selector: 'multi-select',
   standalone: true,
-  imports: [],
+  imports: [ReactiveFormsModule, HTMLOptionElementWithAnyValueType],
   templateUrl: './multi-select.component.html',
   styleUrl: './multi-select.component.scss',
   providers: [
@@ -35,22 +43,35 @@ import {
   ],
   host: {
     '[attr.formcontrolname]': '_formcontrolname',
-    '[prop.formcontrolname]': '_formcontrolname',
-    '[attr.formcontrol]': 'formControl',
-    '[prop.formcontrol]': 'formControl',
   },
 })
 export class MultiSelectComponent implements ControlValueAccessor {
-  @ContentChildren(OptionDirective, { read: ElementRef<HTMLElement> })
-  private children!: QueryList<ElementRef<HTMLElement>>;
-  public options: WritableSignal<HTMLOptionElement[]> = signal([]);
-  private selectedOptions: WritableSignal<unknown[]> = signal<unknown[]>([]);
-  private _formcontrolname?: string | undefined;
-  private _formControl?: FormControl | undefined;
+  
+  private children: Signal<readonly HTMLOptionElementWithAnyValueType[]> = contentChildren(HTMLOptionElementWithAnyValueType); 
 
-  public set formControl(value: FormControl | undefined) {
-    this._formControl = value;
-  }
+  @ViewChild('dropdown') dropdown!: ElementRef<HTMLDivElement>;
+  @ViewChild('dropdown_toggler') dropdownToggler!: ElementRef<HTMLButtonElement>;
+
+  fromSelect: boolean = false;
+
+  fromSelectOptions!: Signal<readonly HTMLOptionElementWithAnyValueType[]>;
+
+  public options: Signal<readonly HTMLOptionElementWithAnyValueType[]> = signal([]);
+
+  protected selectedOptions: WritableSignal<
+    HTMLOptionElementWithAnyValueType[]
+  > = signal([]);
+  protected selectedOptionsValues: Signal<any[]> = computed(() => {
+    let options = this.selectedOptions();
+    return options.map((option) => option.value);
+  });
+  private _formcontrolname?: string | undefined;
+  private formControl?: FormControl | undefined;
+
+  protected display: Signal<string> = computed(() => {
+    let options = this.selectedOptions();
+    return options.map((option) => option.toString()).join(', ');
+  });
 
   public set formcontrolname(value: string | undefined) {
     this._formcontrolname = value;
@@ -59,24 +80,24 @@ export class MultiSelectComponent implements ControlValueAccessor {
         (directive) => directive.name === this._formcontrolname
       );
       if (formControlDirective) {
-        this.formGroupDirective.control.removeControl(this._formcontrolname);
-        // let formcontrolnamessss = new FormControlName(
-        //   this.formGroupDirective,
-        //   [],
-        //   [],
-        //   [this],
-        //   null
-        // );
-        // console.log(formcontrolnamessss);
-        this._formControl = new FormControl([]);
-        this.formGroupDirective.control.addControl(
-          this._formcontrolname,
-          this._formControl
-        );
-        // formcontrolnamessss.name = this._formcontrolname;
-        // this.formGroupDirective.addControl(formcontrolnamessss);
-        // console.log(this.formGroupDirective);
+        this.formGroupDirective.removeControl(formControlDirective);
       }
+      this.formGroupDirective.control.removeControl(this._formcontrolname);
+      this.formControl = new FormControl([]);
+      let formcontrolnamessss = new FormControlNameWithControl(
+        this.formGroupDirective,
+        [],
+        [],
+        [this],
+        null,
+        this.formControl
+      );
+      this.formGroupDirective.control.addControl(
+        this._formcontrolname,
+        this.formControl
+      );
+      formcontrolnamessss.name = this._formcontrolname;
+      this.formGroupDirective.addControl(formcontrolnamessss);
     }
   }
 
@@ -87,14 +108,12 @@ export class MultiSelectComponent implements ControlValueAccessor {
     private formGroupDirective: FormGroupDirective
   ) {
     effect(() => {
-      console.log(this.selectedOptions());
-      this.onChange(this.selectedOptions());
+      this.onChange(this.selectedOptionsValues());
     });
   }
 
   writeValue(obj: any): void {
-    if (Array.isArray(obj)) this.selectedOptions.set(obj);
-    else this.selectedOptions.set([obj]);
+    console.log('writeValue', obj);
   }
 
   registerOnChange(fn: any): void {
@@ -106,22 +125,45 @@ export class MultiSelectComponent implements ControlValueAccessor {
   setDisabledState(isDisabled: boolean): void {}
 
   ngAfterContentInit(): void {
-    if (this.options().length === 0) {
-      this.options.set(
-        this.children
-          .toArray()
-          .map((el) => el.nativeElement)
-          .filter(
-            (el) => el instanceof HTMLOptionElement
-          ) as HTMLOptionElement[]
-      );
-    }
+    this.options = computed(() => {
+      if (!this.fromSelect) return this.children();
+      return this.fromSelectOptions();
+    })
   }
 
-  onSelectOption($event: MouseEvent) {
-    this.selectedOptions.update((options) => {
-      options.push(($event.target as HTMLOptionElement).value);
-      return options;
-    });
+  onSelectOption(option: HTMLOptionElementWithAnyValueType) {
+    option.selected = !option.selected;
+    this.selectedOptions.set(
+      this.options().filter((option) => option.selected)
+    );
   }
+
+  dorpdown($event: MouseEvent) {
+    $event.preventDefault();
+    $event.stopPropagation();
+    this.dropdown.nativeElement.toggleAttribute('open');
+    this.dropdownToggler.nativeElement.toggleAttribute('active');
+  }
+
+}
+
+class FormControlNameWithControl extends FormControlName {
+  constructor(
+    parent: ControlContainer,
+    validators: (ValidatorFn | Validator)[],
+    asyncValidators: (AsyncValidatorFn | AsyncValidator)[],
+    valueAccessors: ControlValueAccessor[],
+    _ngModelWarningConfig: string | null,
+    control: FormControl<unknown>
+  ) {
+    super(
+      parent,
+      validators,
+      asyncValidators,
+      valueAccessors,
+      _ngModelWarningConfig
+    );
+    this.control = control;
+  }
+  override control: FormControl<any>;
 }

@@ -1,4 +1,18 @@
-@for (option of options(); track option) {
-<option [value]="option.value" [selected]="option.selected" (click)="onSelectOption($event)">{{ option.innerHTML }}</option>
-}
-<div>cascac</div>
+<button
+  #dropdown_toggler
+  class="form-select"
+  type="button"
+  (click)="dorpdown($event)"
+>
+  {{ display() || "Select an option" }}
+</button>
+<div #dropdown id="dropdown" class="bg-body-secondary border border-2 border-secondary rounded-bottom-3">
+  @for (option of options(); track option) {
+  <div class="d-flex align-items-center" (click)="onSelectOption(option)">
+    <input type="checkbox" class="mx-2 form-check-input" [checked]="option.selected">
+    <option [selected]="option.selected" class="form-check-label">
+      {{ option.label }}
+    </option>
+  </div>
+  }
+</div>

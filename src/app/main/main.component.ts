@@ -10,22 +10,28 @@ import { MultiSelectModule } from '../multi-select/multi-select.module';
   styleUrl: './main.component.scss',
 })
 export class MainComponent {
-  options: { label: string; value: unknown }[] = [
+  options: { label: string; value: any }[] = [
     { label: 'picone', value: 1 },
-    { label: 'carlo', value: 2 },
-    { label: 'giorgio', value: 3 },
-    { label: 'luca', value: 4 },
-    { label: 'luigi', value: 5 },
-    { label: 'giorgione', value: 6 },
-    { label: 'ilario', value: 7 },
+    { label: 'carlo', value: undefined },
+    { label: 'giorgio', value: {id: 3, content: NaN,toString: this.tostring} },
+    { label: 'luca', value: ()=>'picone' },
+    { label: 'luigi', value: "piccione" },
+    { label: 'giorgione', value: {id: 6, content: undefined,toString: this.tostring} },
+    { label: 'ilario', value: {id: 7, content: ()=>'test',toString: this.tostring} },
   ];
 
   group = new FormGroup({
-    first: new FormControl([]),
+    first: new FormControl<{}>({}),
     last: new FormControl('Drew'),
   });
+  
+  tostring(this: any) {
+    return this.id;
+  }
 
   formDisplay(): void {
     console.log("prova",this.group.getRawValue());
+    this.options.pop();
+    console.log(this.options)
   }
 }

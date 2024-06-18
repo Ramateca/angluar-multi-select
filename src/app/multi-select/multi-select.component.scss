@@ -1,0 +1,55 @@
+button {
+  max-width: 200px;
+  text-wrap: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+button[active] {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+:host {
+  position: relative;
+  display: flex;
+}
+
+#dropdown {
+  width: 100%;
+  max-height: 120px;
+  overflow-y: auto !important;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  text-wrap: nowrap;
+  position: absolute;
+  display: none;
+  top: 100%;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+    background-color: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    width: 1px;
+    border-radius: 1vmin;
+    background-color: gray;
+  }
+
+  > div {
+    min-height: 30px;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-wrap: nowrap;
+
+    &:hover {
+      background-color: rgba(0,0,0,0.15);
+    }
+  }
+}
+
+#dropdown[open] {
+  display: block;
+}

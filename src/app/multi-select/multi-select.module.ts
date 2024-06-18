@@ -1,20 +1,18 @@
 import { NgModule } from '@angular/core';
 import { MultiSelectComponent } from './multi-select.component';
-import { OptionDirective } from './option.directive';
+import { HTMLOptionElementWithAnyValueType } from './option.directive';
 import { MultiSelectDiverctive } from './multi-select.directive';
-
-
 
 @NgModule({
   imports: [
     MultiSelectComponent,
-    OptionDirective,
-    MultiSelectDiverctive
+    HTMLOptionElementWithAnyValueType,
+    MultiSelectDiverctive,
   ],
   exports: [
     MultiSelectComponent,
-    OptionDirective,
-    MultiSelectDiverctive
-  ]
+    HTMLOptionElementWithAnyValueType,
+    MultiSelectDiverctive,
+  ],
 })
-export class MultiSelectModule { }
+export class MultiSelectModule {}
