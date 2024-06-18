@@ -1,1 +1,15 @@
-/* You can add global styles to this file, and also import other style files */
+*, *::after, *::before {
+    margin:0;
+    padding:0;
+}
+
+html, body {
+    min-width: 100dvw;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    max-width: 100dvw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: lightgray !important;
+}
