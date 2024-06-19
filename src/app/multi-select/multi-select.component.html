@@ -1,16 +1,17 @@
 <button
   #dropdown_toggler
-  class="form-select"
+  class="dropdown-toggle btn form-control"
   type="button"
+  [disabled]="isDisabled()"
   (click)="dorpdown($event)"
 >
   {{ display() || "Select an option" }}
 </button>
-<div #dropdown id="dropdown" class="bg-body-secondary border border-2 border-secondary rounded-bottom-3">
+<div #dropdown id="dropdown" class="dropdown-menu">
   @for (option of options(); track option) {
-  <div class="d-flex align-items-center" (click)="onSelectOption(option)">
-    <input type="checkbox" class="mx-2 form-check-input" [checked]="option.selected">
-    <option [selected]="option.selected" class="form-check-label">
+  <div class="d-flex align-items-center dropdown-item" [attr.disabled]="option.disabled" (click)="onSelectOption(option)" onkeydown="">
+    <input type="checkbox" [disabled]="option.disabled" class="mx-2 form-check-input" [checked]="option.selected">
+    <option [selected]="option.selected" [disabled]="option.disabled" class="form-check-label">
       {{ option.label }}
     </option>
   </div>

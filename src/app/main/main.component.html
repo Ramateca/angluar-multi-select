@@ -1,13 +1,13 @@
+<button class="btn btn-secondary" (click)="switchDisable()">{{ isDisabled ? 'Enable' : 'Disable'}}</button>
+<button class="btn btn-secondary" (click)="patchValues()">Patch Values</button>
 <form [formGroup]="group">
-  <select multiple formControlName="first">
+  <multi-select formControlName="first">
     @for (option of options; track option) {
     <option [ngValue]="option.value">{{ option.label }}</option>
     }
-  </select>
-
-  <input type="text" formControlName="last" />
+  </multi-select>
   <br />
-  <button type="submit" (click)="formDisplay()" class="btn btn-primary">
+  <button type="submit" [disabled]="!group.valid" (click)="formDisplay()" class="btn btn-primary">
     leggi form
   </button>
 </form>

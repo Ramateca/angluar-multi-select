@@ -24,7 +24,6 @@ button[active] {
   overflow: hidden;
   text-wrap: nowrap;
   position: absolute;
-  display: none;
   top: 100%;
 
   &::-webkit-scrollbar {
@@ -35,18 +34,6 @@ button[active] {
     width: 1px;
     border-radius: 1vmin;
     background-color: gray;
-  }
-
-  > div {
-    min-height: 30px;
-    max-width: 100%;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    text-wrap: nowrap;
-
-    &:hover {
-      background-color: rgba(0,0,0,0.15);
-    }
   }
 }
 

@@ -1,4 +1,4 @@
-import { Component, Directive, ElementRef, Input } from '@angular/core';
+import { Component, ElementRef, Input } from '@angular/core';
 
 @Component({
   selector: 'option',
@@ -12,7 +12,6 @@ export class HTMLOptionElementWithAnyValueType {
   @Input('disabled') disabled: boolean = false;
   @Input('label') label: string = '';
   @Input('selected') selected: boolean = false;
-  content!: string | null;
 
   constructor(private el: ElementRef<HTMLOptionElement>) {}
 
