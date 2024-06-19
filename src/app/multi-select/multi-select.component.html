@@ -1,17 +1,34 @@
 <button
   #dropdown_toggler
-  class="dropdown-toggle btn form-control"
+  class="multi-select-dropdown-toggle"
   type="button"
   [disabled]="isDisabled()"
   (click)="dorpdown($event)"
 >
-  {{ display() || "Select an option" }}
+  {{ display() || placeholder() }}
 </button>
-<div #dropdown id="dropdown" class="dropdown-menu">
+<div #dropdown class="mulit-select-dropdown-menu">
   @for (option of options(); track option) {
-  <div class="d-flex align-items-center dropdown-item" [attr.disabled]="option.disabled" (click)="onSelectOption(option)" onkeydown="">
-    <input type="checkbox" [disabled]="option.disabled" class="mx-2 form-check-input" [checked]="option.selected">
-    <option [selected]="option.selected" [disabled]="option.disabled" class="form-check-label">
+  <div
+    tabindex="0"
+    class="multi-select-dropdown-item"
+    [attr.disabled]="option.disabled"
+    (click)="onSelectOption(option)"
+    (keydown.enter)="onSelectOption(option)"
+    onkeydown=""
+  >
+    <input
+      tabindex="-1"
+      type="checkbox"
+      [disabled]="option.disabled"
+      class="multi-select-option-checkbox"
+      [checked]="option.selected"
+    />
+    <option
+      [selected]="option.selected"
+      [disabled]="option.disabled"
+      class="multi-select-option"
+    >
       {{ option.label }}
     </option>
   </div>

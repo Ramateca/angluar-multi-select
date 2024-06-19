@@ -1,9 +1,6 @@
 import {
-  Attribute,
   Component,
   ElementRef,
-  Input,
-  InputSignal,
   Signal,
   ViewChild,
   WritableSignal,
@@ -50,7 +47,8 @@ type Option = HTMLOptionElementWithAnyValueType;
   },
 })
 export class MultiSelectComponent implements ControlValueAccessor {
-  private children: Signal<readonly HTMLOptionElementWithAnyValueType[]> = contentChildren(HTMLOptionElementWithAnyValueType);
+  private children: Signal<readonly HTMLOptionElementWithAnyValueType[]> =
+    contentChildren(HTMLOptionElementWithAnyValueType);
 
   @ViewChild('dropdown') dropdown!: ElementRef<HTMLDivElement>;
   @ViewChild('dropdown_toggler')
@@ -61,6 +59,10 @@ export class MultiSelectComponent implements ControlValueAccessor {
   fromSelectOptions!: Signal<readonly Option[]>;
 
   public options: Signal<readonly Option[]> = signal([]);
+
+  public noValueOption = computed(() => {
+    return this.options().filter((option) => !option.value)[0];
+  });
 
   protected selectedOptions: WritableSignal<Option[]> = signal([]);
   protected selectedOptionsValues: Signal<any[]> = computed(() => {
@@ -125,6 +127,26 @@ export class MultiSelectComponent implements ControlValueAccessor {
     alias: 'required',
     transform: booleanAttribute,
   });
+  placeholder = input('', {
+    alias: 'placeholer',
+    transform: (value: any) => {
+      switch (typeof value) {
+        case 'string':
+          return value;
+        case 'number':
+        case 'bigint':
+        case 'boolean':
+        case 'object':
+          return value.toString();
+        case 'function':
+          return value().toString();
+        case 'symbol':
+          return value.toString().replace(/Symbol\((.*)\)/, '$1');
+        case 'undefined':
+          return '';
+      }
+    },
+  });
 
   isDisabled: WritableSignal<boolean> = signal<boolean>(this.disabled());
 
@@ -144,20 +166,27 @@ export class MultiSelectComponent implements ControlValueAccessor {
     );
     effect(() => {
       if (this.dropdown) {
-        if(this.isDisabled()) {
-          this.dropdown.nativeElement.removeAttribute("open");
-          this.dropdownToggler.nativeElement.removeAttribute("active");
+        if (this.isDisabled()) {
+          this.dropdown.nativeElement.removeAttribute('open');
+          this.dropdownToggler.nativeElement.removeAttribute('active');
         }
       }
-    })
+    });
   }
 
   writeValue(values: any[]): void {
-    this.options().forEach((option) => {
-      const isValueIncluded: boolean = values.includes(option.value);
-      if (isValueIncluded) option.selected = true;
-      else option.selected = false;
-    });
+    if (!Array.isArray(values)) {
+      this.options().forEach((option) => {
+        if (option.value === values) option.selected = true;
+        else option.selected = false;
+      });
+    } else {
+      this.options().forEach((option) => {
+        const isValueIncluded: boolean = values.includes(option.value);
+        if (isValueIncluded) option.selected = true;
+        else option.selected = false;
+      });
+    }
     this.selectedOptions.set(
       this.options().filter((option) => option.selected)
     );
@@ -168,7 +197,7 @@ export class MultiSelectComponent implements ControlValueAccessor {
   }
 
   registerOnTouched(fn: any): void {
-    return;
+    fn();
   }
 
   setDisabledState(isDisabled: boolean): void {

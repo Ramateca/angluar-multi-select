@@ -44,14 +44,13 @@ export class MainComponent {
 
   formDisplay(): void {
     console.log(this.group.getRawValue());
-    this.options.pop();
   }
 
   isDisabled: boolean = false;
 
   patchValues(): void {
     let first = this.group.get("first");
-    first?.patchValue([])
+    first?.reset();
   }
 
   switchDisable() {
