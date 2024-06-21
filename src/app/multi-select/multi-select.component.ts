@@ -1,6 +1,10 @@
 import {
   Component,
   ElementRef,
+  EventEmitter,
+  Injector,
+  Input,
+  Output,
   Signal,
   ViewChild,
   WritableSignal,
@@ -11,6 +15,7 @@ import {
   forwardRef,
   input,
   signal,
+  untracked,
 } from '@angular/core';
 import {
   AsyncValidator,
@@ -47,8 +52,12 @@ type Option = HTMLOptionElementWithAnyValueType;
   },
 })
 export class MultiSelectComponent implements ControlValueAccessor {
-  private children: Signal<readonly HTMLOptionElementWithAnyValueType[]> =
-    contentChildren(HTMLOptionElementWithAnyValueType);
+  private children: Signal<readonly Option[]> = contentChildren(
+    HTMLOptionElementWithAnyValueType
+  );
+
+  @Input('compareWith') compareWith: (a: any, b: any) => boolean = (a, b) =>
+    a?.toString() === b?.toString();
 
   @ViewChild('dropdown') dropdown!: ElementRef<HTMLDivElement>;
   @ViewChild('dropdown_toggler')
@@ -58,24 +67,14 @@ export class MultiSelectComponent implements ControlValueAccessor {
 
   fromSelectOptions!: Signal<readonly Option[]>;
 
-  public options: Signal<readonly Option[]> = signal([]);
-
-  public noValueOption = computed(() => {
-    return this.options().filter((option) => !option.value)[0];
-  });
+  public options: WritableSignal<Option[]> = signal([]);
 
   protected selectedOptions: WritableSignal<Option[]> = signal([]);
-  protected selectedOptionsValues: Signal<any[]> = computed(() => {
-    let options = this.selectedOptions();
-    return options.map((option) => option.value);
-  });
+  protected selectedOptionsValues!: Signal<any[]>;
   private _formcontrolname: string | undefined;
   private newFormControl: FormControl | undefined;
 
-  protected display: Signal<string> = computed(() => {
-    let options = this.selectedOptions();
-    return options.map((option) => option.toString()).join(', ');
-  });
+  protected display!: Signal<string>;
 
   public set formcontrolname(value: string | undefined) {
     this._formcontrolname = value;
@@ -148,11 +147,17 @@ export class MultiSelectComponent implements ControlValueAccessor {
     },
   });
 
+  @Output() autocomplete = new EventEmitter<string>();
+  autocompleteControl = new FormControl();
+
   isDisabled: WritableSignal<boolean> = signal<boolean>(this.disabled());
+
+  checkUpdated: boolean = false;
 
   constructor(
     private select: ElementRef<HTMLSelectElement>,
-    private formGroupDirective: FormGroupDirective
+    private formGroupDirective: FormGroupDirective,
+    private injector: Injector
   ) {
     effect(() => {
       this.onChange(this.selectedOptionsValues());
@@ -172,24 +177,28 @@ export class MultiSelectComponent implements ControlValueAccessor {
         }
       }
     });
+    this.autocompleteControl.valueChanges.subscribe((value) => {
+      this.autocomplete.emit(value);
+    });
   }
 
   writeValue(values: any[]): void {
-    if (!Array.isArray(values)) {
-      this.options().forEach((option) => {
-        if (option.value === values) option.selected = true;
-        else option.selected = false;
-      });
-    } else {
-      this.options().forEach((option) => {
-        const isValueIncluded: boolean = values.includes(option.value);
-        if (isValueIncluded) option.selected = true;
-        else option.selected = false;
-      });
+    if (this.options && this.selectedOptions) {
+      if (!Array.isArray(values)) {
+        this.options().forEach((option) => {
+          if (this.compareWith(option.value, values)) option.selected = true;
+          else option.selected = false;
+        });
+      } else {
+        this.options().forEach((option) => {
+          option.selected = values.some((value) =>
+            this.compareWith(option.value, value)
+          );
+        });
+      }
+      let selectedOptions = this.options().filter((option) => option.selected);
+      this.selectedOptions.set(selectedOptions);
     }
-    this.selectedOptions.set(
-      this.options().filter((option) => option.selected)
-    );
   }
 
   registerOnChange(fn: any): void {
@@ -205,17 +214,75 @@ export class MultiSelectComponent implements ControlValueAccessor {
   }
 
   ngAfterContentInit(): void {
-    this.options = computed(() => {
-      if (!this.fromSelect) return this.children();
-      return this.fromSelectOptions();
+    effect(
+      () => {
+        let options;
+        if (!this.fromSelect) options = this.children();
+        else options = this.fromSelectOptions();
+        setTimeout(() => {
+          let map = new Map<string, Option>();
+          options.forEach((option) => {
+            if (map.has(option.label))
+              console.error(
+                'Duplicated label found.\nDuplicate: %o\n\nOriginal: %o\n\nOptions will display only distinct label to avoid confusion for the user.',
+                option,
+                map.get(option.label)
+              );
+            map.set(option.label, option);
+          });
+          this.options.set(Array.from(map.values()));
+        }, 10);
+      },
+      { allowSignalWrites: true, injector: this.injector }
+    );
+    this.selectedOptionsValues = computed(() => {
+      let options = this.selectedOptions();
+      return options.map((option) => option.value);
     });
+    this.display = computed(() => {
+      let options = this.selectedOptions();
+      return options.map((option) => option.toString()).join(', ');
+    });
+    effect(
+      () => {
+        let options = this.options();
+        setTimeout(() => {
+          let oldSelectedOptions = untracked(this.selectedOptions);
+          let oldSelectedOptionsLabels = oldSelectedOptions.map<string>(
+            (option) => option.label
+          );
+          options.forEach((option) => {
+            if (oldSelectedOptionsLabels.includes(option.label))
+              option.selected = true;
+          });
+          let newSelectedOptions = options.filter((option) => option.selected);
+          let combinedSelectedOptions =
+            oldSelectedOptions.concat(newSelectedOptions);
+          let map = new Map<string, Option>();
+          combinedSelectedOptions.forEach((option) => {
+            map.set(option.label, option);
+          });
+          this.selectedOptions.set(Array.from(map.values()));
+        }, 10);
+      },
+      { allowSignalWrites: true, injector: this.injector }
+    );
   }
 
-  onSelectOption(option: Option) {
-    option.selected = !option.selected;
-    this.selectedOptions.set(
-      this.options().filter((option) => option.selected)
-    );
+  onSelectOption(optionToChangeSelect: Option) {
+    optionToChangeSelect.selected = !optionToChangeSelect.selected;
+    let oldSelectedOptions = this.selectedOptions();
+    let map = new Map<string, Option>();
+    oldSelectedOptions.forEach((option) => {
+      map.set(option.label, option);
+    });
+    if (map.has(optionToChangeSelect.label) && !optionToChangeSelect.selected) {
+      map.delete(optionToChangeSelect.label);
+    }
+    if (!map.has(optionToChangeSelect.label) && optionToChangeSelect.selected) {
+      map.set(optionToChangeSelect.label, optionToChangeSelect);
+    }
+    this.selectedOptions.set(Array.from(map.values()));
   }
 
   dorpdown($event: MouseEvent) {

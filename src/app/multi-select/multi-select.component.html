@@ -8,7 +8,9 @@
   {{ display() || placeholder() }}
 </button>
 <div #dropdown class="mulit-select-dropdown-menu">
-  @for (option of options(); track option) {
+  @if (autocomplete.observed) {
+  <input [formControl]="autocompleteControl" />
+  } @else {} @for (option of options(); track option) {
   <div
     tabindex="0"
     class="multi-select-dropdown-item"

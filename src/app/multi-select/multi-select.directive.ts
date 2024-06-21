@@ -1,6 +1,9 @@
 import {
   Directive,
   ElementRef,
+  EventEmitter,
+  Input,
+  Output,
   Signal,
   ViewContainerRef,
   booleanAttribute,
@@ -38,8 +41,11 @@ export class MultiSelectDiverctive {
       }
     },
   });
+  @Output() autocomplete = new EventEmitter<string>();
+  @Input('compareWith') compareWith: (a: any, b: any) => boolean = (a, b) =>
+    a?.toString() === b?.toString();
 
-  ngAfterContentInit(): void {
+  ngOnInit(): void {
     let template = this.select.nativeElement;
     let maybeFormControlName: string | null =
       template.getAttribute('formControlName');
@@ -51,6 +57,8 @@ export class MultiSelectDiverctive {
       multiSelect.instance.disabled = this.isDisabled;
       multiSelect.instance.placeholder = this.placeholder;
       multiSelect.instance.fromSelectOptions = this.options;
+      multiSelect.instance.compareWith = this.compareWith;
+      multiSelect.instance.autocomplete = this.autocomplete;
       if (maybeFormControlName && maybeFormControlName.trim() !== '')
         multiSelect.instance.formcontrolname = maybeFormControlName;
       this.select.nativeElement.parentNode?.removeChild(template);
