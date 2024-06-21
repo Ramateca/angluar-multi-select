@@ -1,0 +1,12 @@
+<form [formGroup]="group">
+  <multi-select
+    class="select"
+    placeholer="Seleziona un utente"
+    (autocomplete)="onAutocomplete($event)"
+    formControlName="first"
+  >
+    @for (option of options; track option) {
+    <option [value]="option.value">{{ option.label }}</option>
+    }
+  </multi-select>
+</form>

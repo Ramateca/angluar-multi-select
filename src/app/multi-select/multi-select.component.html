@@ -7,32 +7,40 @@
 >
   {{ display() || placeholder() }}
 </button>
-<div #dropdown class="mulit-select-dropdown-menu">
+<div #dropdown class="multi-select-dropdown-menu">
   @if (autocomplete.observed) {
-  <input [formControl]="autocompleteControl" />
-  } @else {} @for (option of options(); track option) {
-  <div
-    tabindex="0"
+  <label for="autocomplete-input" class="visually-hidden">Options Filter</label>
+  <input
+    name="autocomplete input"
+    id="autocomplete-input"
+    [formControl]="autocompleteControl"
+    class="multi-select-autocomplete-input"
+  />
+  } @else {} @for (option of options(); track option; let first = $first; let
+  index = $index) {
+  <a
+    [tabindex]="first ? 0 : -1"
     class="multi-select-dropdown-item"
     [attr.disabled]="option.disabled"
     (click)="onSelectOption(option)"
     (keydown.enter)="onSelectOption(option)"
-    onkeydown=""
   >
-    <input
-      tabindex="-1"
-      type="checkbox"
-      [disabled]="option.disabled"
-      class="multi-select-option-checkbox"
-      [checked]="option.selected"
-    />
-    <option
+    <label
+      option
       [selected]="option.selected"
       [disabled]="option.disabled"
       class="multi-select-option"
     >
+      <input
+        tabindex="-1"
+        type="checkbox"
+        [disabled]="option.disabled"
+        class="multi-select-option-checkbox"
+        [checked]="option.selected"
+        [name]="option.label"
+      />
       {{ option.label }}
-    </option>
-  </div>
+    </label>
+  </a>
   }
 </div>

@@ -28,22 +28,29 @@ export class MultiSelectDiverctive {
   isDisabled = input(false, { alias: 'disabled', transform: booleanAttribute });
   placeholder = input('', {
     alias: 'placeholer',
-    transform: (value: any) => {
+    transform: (value: unknown) => {
       switch (typeof value) {
-        case 'string': return value;
+        case 'string':
+          return value;
         case 'number':
         case 'bigint':
         case 'boolean':
-        case 'object': return value.toString();
-        case 'function': return value().toString();
-        case 'symbol': return value.toString().replace(/Symbol\((.*)\)/, "$1");
-        case 'undefined': return "";
+        case 'object':
+          return value !== null ? value.toString() : '';
+        case 'function':
+          return value().toString();
+        case 'symbol':
+          return value.toString().replace(/Symbol\((.*)\)/, '$1');
+        case 'undefined':
+          return '';
       }
     },
   });
   @Output() autocomplete = new EventEmitter<string>();
-  @Input('compareWith') compareWith: (a: any, b: any) => boolean = (a, b) =>
-    a?.toString() === b?.toString();
+  @Input('compareWith') compareWith: (a: unknown, b: unknown) => boolean = (
+    a,
+    b
+  ) => a?.toString() === b?.toString();
 
   ngOnInit(): void {
     let template = this.select.nativeElement;

@@ -7,42 +7,55 @@ import {
 } from '@angular/forms';
 import { MultiSelectModule } from '../multi-select/multi-select.module';
 import { JsonPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
+
+type Option = {
+  label: string;
+  value: unknown;
+  selected: boolean;
+};
 
 @Component({
   selector: 'app-main',
   standalone: true,
-  imports: [MultiSelectModule, ReactiveFormsModule, FormsModule, JsonPipe],
+  imports: [
+    MultiSelectModule,
+    ReactiveFormsModule,
+    FormsModule,
+    JsonPipe,
+    RouterLink,
+  ],
   templateUrl: './main.component.html',
   styleUrl: './main.component.scss',
 })
 export class MainComponent {
-  options: { label: string; value: any; selected: boolean }[] = [
+  options: Option[] = [
     { label: 'picone', value: 1, selected: false },
     { label: 'picone', value: 1, selected: true },
     { label: 'carlo', value: undefined, selected: true },
     {
       label: 'giorgio',
       value: { id: 3, content: NaN, toString: this.tostring },
-      selected: false
+      selected: false,
     },
-    { label: 'luca', value: () => 'picone',selected: false },
-    { label: 'luigi', value: 'piccione',selected: false },
+    { label: 'luca', value: () => 'picone', selected: false },
+    { label: 'luigi', value: 'piccione', selected: false },
     {
       label: 'giorgione',
       value: { id: 6, content: undefined, toString: this.tostring },
-      selected: false
+      selected: false,
     },
     {
       label: 'ilario',
       value: { id: 7, content: () => 'test', toString: this.tostring },
-      selected: false
+      selected: false,
     },
   ];
 
   group!: FormGroup;
 
-  tostring(this: any) {
-    return this.id;
+  tostring(this: { [key: string]: unknown }) {
+    return this['id'];
   }
 
   formValues: WritableSignal<Object | undefined> = signal(undefined);
@@ -58,7 +71,7 @@ export class MainComponent {
     first?.reset();
   }
 
-  initialOptions: { label: string; value: any, selected: boolean }[] = [];
+  initialOptions: Option[] = [];
 
   ngOnInit(): void {
     this.initialOptions = this.options;
@@ -66,13 +79,15 @@ export class MainComponent {
 
   ngAfterContentInit(): void {
     this.group = new FormGroup({
-      first: new FormControl<any[]>([]),
+      first: new FormControl<unknown[]>([]),
     });
   }
 
   onAutocomplete(string: string): void {
     this.options = this.initialOptions.filter((option) =>
-      option.label.toLocaleLowerCase().includes(string.trim().toLocaleLowerCase())
+      option.label
+        .toLocaleLowerCase()
+        .includes(string.trim().toLocaleLowerCase())
     );
   }
 

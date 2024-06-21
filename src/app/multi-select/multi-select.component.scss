@@ -11,7 +11,6 @@
   border: 1px solid #bdbdbd;
   border-radius: 1vmin;
 
-
   &:not(:focus) {
     box-shadow: 0px 1px 3px 0px #858585;
   }
@@ -29,9 +28,22 @@
   position: relative;
   display: flex;
   min-height: 30px;
+
+  &.with-autocomplete {
+    .multi-select-dropdown-toggle:has(+ [open]) {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    .multi-select-dropdown-menu {
+      padding-top: 0;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+    }
+  }
 }
 
-.mulit-select-dropdown-menu {
+.multi-select-dropdown-menu {
   display: none;
 
   width: 100%;
@@ -51,7 +63,8 @@
   top: 100%;
 
   padding: 1vmin 0;
-  border-radius: 1vmin;
+  border-bottom-left-radius: 1vmin;
+  border-bottom-right-radius: 1vmin;
 
   &::-webkit-scrollbar {
     width: 5px;
@@ -65,26 +78,58 @@
   &[open] {
     display: block;
   }
+}
 
-  .multi-select-dropdown-item {
-    display: flex;
-    gap: 20px;
+.multi-select-dropdown-item {
+  display: flex;
+  justify-content: stretch;
+  width: 100%;
 
-    width: 100%;
+  cursor: pointer;
 
-    cursor: pointer;
+  padding: 5px 10px;
 
-    padding: 5px 10px;
-
-    &:focus,
-    &:focus-visible,
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.1);
-      outline: 0;
-    }
+  &:focus,
+  &:focus-visible,
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    outline: 0;
   }
 }
 
-#dropdown[open] {
-  display: block;
+.multi-select-option-checkbox,
+.multi-select-option {
+  pointer-events: none;
+}
+
+.multi-select-option-checkbox {
+  margin-right: 20px;
+}
+.multi-select-option {
+  width: 100%;
+}
+
+.multi-select-autocomplete-input {
+  position: sticky;
+  top: 0;
+  border: unset;
+  &:focus,
+  &:focus-visible,
+  &:hover {
+    border-color: rgba(0, 0, 0, 0.3);
+    outline: 0;
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }

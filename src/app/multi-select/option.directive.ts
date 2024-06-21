@@ -1,14 +1,14 @@
 import { Component, ElementRef, Input } from '@angular/core';
 
 @Component({
-  selector: 'option',
+  selector: 'option, label[option]',
   standalone: true,
   imports: [],
   template: '<ng-content></ng-content>',
 })
 export class HTMLOptionElementWithAnyValueType {
-  @Input('value') value?: any;
-  @Input('ngValue') ngValue?: any;
+  @Input('value') value?: unknown;
+  @Input('ngValue') ngValue?: unknown;
   @Input('disabled') disabled: boolean = false;
   @Input('label') label!: string;
   @Input('selected') selected: boolean = false;

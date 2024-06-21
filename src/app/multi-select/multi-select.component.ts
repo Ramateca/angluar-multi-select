@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   EventEmitter,
@@ -40,6 +41,7 @@ type Option = HTMLOptionElementWithAnyValueType;
   imports: [ReactiveFormsModule, HTMLOptionElementWithAnyValueType],
   templateUrl: './multi-select.component.html',
   styleUrl: './multi-select.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -49,6 +51,8 @@ type Option = HTMLOptionElementWithAnyValueType;
   ],
   host: {
     '[attr.formcontrolname]': '_formcontrolname',
+    '[class.with-autocomplete]': 'autocomplete.observed',
+    '[attr.aria]': 'true'
   },
 })
 export class MultiSelectComponent implements ControlValueAccessor {
@@ -56,7 +60,7 @@ export class MultiSelectComponent implements ControlValueAccessor {
     HTMLOptionElementWithAnyValueType
   );
 
-  @Input('compareWith') compareWith: (a: any, b: any) => boolean = (a, b) =>
+  @Input('compareWith') compareWith: (a: unknown, b: unknown) => boolean = (a, b) =>
     a?.toString() === b?.toString();
 
   @ViewChild('dropdown') dropdown!: ElementRef<HTMLDivElement>;
@@ -70,7 +74,7 @@ export class MultiSelectComponent implements ControlValueAccessor {
   public options: WritableSignal<Option[]> = signal([]);
 
   protected selectedOptions: WritableSignal<Option[]> = signal([]);
-  protected selectedOptionsValues!: Signal<any[]>;
+  protected selectedOptionsValues!: Signal<unknown[]>;
   private _formcontrolname: string | undefined;
   private newFormControl: FormControl | undefined;
 
@@ -117,7 +121,7 @@ export class MultiSelectComponent implements ControlValueAccessor {
     }
   }
 
-  private onChange: (value: any) => void = () => {};
+  private onChange: (value: unknown) => void = () => {};
   disabled = input(false, {
     alias: 'disabled',
     transform: booleanAttribute,
@@ -128,7 +132,7 @@ export class MultiSelectComponent implements ControlValueAccessor {
   });
   placeholder = input('', {
     alias: 'placeholer',
-    transform: (value: any) => {
+    transform: (value: unknown) => {
       switch (typeof value) {
         case 'string':
           return value;
@@ -136,7 +140,7 @@ export class MultiSelectComponent implements ControlValueAccessor {
         case 'bigint':
         case 'boolean':
         case 'object':
-          return value.toString();
+          return value !== null ? value.toString() : '';
         case 'function':
           return value().toString();
         case 'symbol':
@@ -154,11 +158,15 @@ export class MultiSelectComponent implements ControlValueAccessor {
 
   checkUpdated: boolean = false;
 
+  nativeElement!: HTMLElement;
+
   constructor(
-    private select: ElementRef<HTMLSelectElement>,
+    private elementRef: ElementRef<HTMLElement>,
     private formGroupDirective: FormGroupDirective,
     private injector: Injector
   ) {
+    this.nativeElement = elementRef.nativeElement;
+    console.log(this.nativeElement);
     effect(() => {
       this.onChange(this.selectedOptionsValues());
     });
@@ -182,7 +190,7 @@ export class MultiSelectComponent implements ControlValueAccessor {
     });
   }
 
-  writeValue(values: any[]): void {
+  writeValue(values: unknown[]): void {
     if (this.options && this.selectedOptions) {
       if (!Array.isArray(values)) {
         this.options().forEach((option) => {
@@ -201,11 +209,11 @@ export class MultiSelectComponent implements ControlValueAccessor {
     }
   }
 
-  registerOnChange(fn: any): void {
+  registerOnChange(fn: (value: unknown) => void): void {
     this.onChange = fn;
   }
 
-  registerOnTouched(fn: any): void {
+  registerOnTouched(fn: Function): void {
     fn();
   }
 
@@ -313,5 +321,5 @@ class FormControlNameWithControl extends FormControlName {
     );
     this.control = control;
   }
-  override control: FormControl<any>;
+  override control: FormControl<unknown>;
 }
