@@ -13,10 +13,12 @@ import {
   computed,
   contentChildren,
   effect,
-  forwardRef,
   input,
   signal,
   untracked,
+  AfterContentInit,
+  HostBinding,
+  HostListener,
 } from '@angular/core';
 import {
   AsyncValidator,
@@ -31,97 +33,34 @@ import {
   Validator,
   ValidatorFn,
 } from '@angular/forms';
-import { HTMLOptionElementWithAnyValueType } from './option.directive';
+import { OptionDirective } from './option.directive';
 
-type Option = HTMLOptionElementWithAnyValueType;
+type Option = OptionDirective;
 
 @Component({
   selector: 'multi-select',
   standalone: true,
-  imports: [ReactiveFormsModule, HTMLOptionElementWithAnyValueType],
+  imports: [ReactiveFormsModule, OptionDirective],
   templateUrl: './multi-select.component.html',
   styleUrl: './multi-select.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => MultiSelectComponent),
+      useExisting: MultiSelectComponent,
       multi: true,
     },
   ],
-  host: {
-    '[attr.formcontrolname]': '_formcontrolname',
-    '[class.with-autocomplete]': 'autocomplete.observed',
-    '[attr.aria]': 'true'
-  },
 })
-export class MultiSelectComponent implements ControlValueAccessor {
-  private children: Signal<readonly Option[]> = contentChildren(
-    HTMLOptionElementWithAnyValueType
-  );
+export class MultiSelectComponent
+  implements ControlValueAccessor, AfterContentInit
+{
+  @ViewChild('dropdown') private dropdown!: ElementRef<HTMLDivElement>;
+  private children: Signal<readonly Option[]> =
+    contentChildren(OptionDirective);
 
-  @Input('compareWith') compareWith: (a: unknown, b: unknown) => boolean = (a, b) =>
+  @Input() compareWith: (a: unknown, b: unknown) => boolean = (a, b) =>
     a?.toString() === b?.toString();
-
-  @ViewChild('dropdown') dropdown!: ElementRef<HTMLDivElement>;
-  @ViewChild('dropdown_toggler')
-  dropdownToggler!: ElementRef<HTMLButtonElement>;
-
-  fromSelect: boolean = false;
-
-  fromSelectOptions!: Signal<readonly Option[]>;
-
-  public options: WritableSignal<Option[]> = signal([]);
-
-  protected selectedOptions: WritableSignal<Option[]> = signal([]);
-  protected selectedOptionsValues!: Signal<unknown[]>;
-  private _formcontrolname: string | undefined;
-  private newFormControl: FormControl | undefined;
-
-  protected display!: Signal<string>;
-
-  public set formcontrolname(value: string | undefined) {
-    this._formcontrolname = value;
-    let validators: ValidatorFn = () => null;
-    let asyncValidators: AsyncValidatorFn = async () => null;
-    if (this._formcontrolname) {
-      let formControlDirective = this.formGroupDirective.directives.find(
-        (directive) => directive.name === this._formcontrolname
-      );
-      if (formControlDirective) {
-        this.formGroupDirective.removeControl(formControlDirective);
-        if (formControlDirective.validator)
-          validators = formControlDirective.validator;
-        if (formControlDirective.asyncValidator)
-          asyncValidators = formControlDirective.asyncValidator;
-      }
-      let oldFromControl = this.formGroupDirective.control.get(
-        this._formcontrolname
-      );
-      this.formGroupDirective.control.removeControl(this._formcontrolname);
-      this.newFormControl = new FormControl(
-        [],
-        oldFromControl?.validator,
-        oldFromControl?.asyncValidator
-      );
-      let newFormControlName = new FormControlNameWithControl(
-        this.formGroupDirective,
-        [validators],
-        [asyncValidators],
-        [this],
-        null,
-        this.newFormControl
-      );
-      this.formGroupDirective.control.addControl(
-        this._formcontrolname,
-        this.newFormControl
-      );
-      newFormControlName.name = this._formcontrolname;
-      this.formGroupDirective.addControl(newFormControlName);
-    }
-  }
-
-  private onChange: (value: unknown) => void = () => {};
   disabled = input(false, {
     alias: 'disabled',
     transform: booleanAttribute,
@@ -151,28 +90,107 @@ export class MultiSelectComponent implements ControlValueAccessor {
     },
   });
 
+  // eslint-disable-next-line @angular-eslint/prefer-output-readonly
   @Output() autocomplete = new EventEmitter<string>();
-  autocompleteControl = new FormControl();
 
-  isDisabled: WritableSignal<boolean> = signal<boolean>(this.disabled());
+  @HostBinding('class.with-autocomplete') get withAutocomplete() {
+    return this.autocomplete.observed;
+  }
 
-  checkUpdated: boolean = false;
+  private _formcontrolname: string | undefined;
 
-  nativeElement!: HTMLElement;
+  @HostBinding('[attr.formcontrolname]')
+  public get formcontrolname(): string | undefined {
+    return this._formcontrolname;
+  }
+
+  public set formcontrolname(value: string | undefined) {
+    this._formcontrolname = value;
+    let validators: ValidatorFn | undefined;
+    let asyncValidators: AsyncValidatorFn | undefined;
+    if (this._formcontrolname) {
+      const formControlDirective = this.formGroupDirective.directives.find(
+        (directive) => directive.name === this._formcontrolname
+      );
+      if (formControlDirective) {
+        this.formGroupDirective.removeControl(formControlDirective);
+        if (formControlDirective.validator)
+          validators = formControlDirective.validator;
+        if (formControlDirective.asyncValidator)
+          asyncValidators = formControlDirective.asyncValidator;
+      }
+      const oldFromControl = this.formGroupDirective.control.get(
+        this._formcontrolname
+      );
+      const newFormControl = new FormControl<unknown[]>(
+        [],
+        oldFromControl?.validator,
+        oldFromControl?.asyncValidator
+      );
+      const newFormControlName = new FormControlNameWithControl(
+        this.formGroupDirective,
+        validators ? [validators] : [],
+        asyncValidators ? [asyncValidators] : [],
+        [this],
+        null,
+        newFormControl
+      );
+      newFormControlName.name = this._formcontrolname;
+      this.formGroupDirective.control.setControl(
+        this._formcontrolname,
+        newFormControl
+      );
+      this.formGroupDirective.addControl(newFormControlName);
+    }
+  }
+
+  public autocompleteControl = new FormControl();
+
+  @HostBinding('[attr.disabled]')
+  public isDisabled: WritableSignal<boolean> = signal<boolean>(this.disabled());
+
+  private _isOpen: '' | undefined = undefined;
+
+  @HostBinding('attr.open')
+  public get isOpen(): '' | undefined {
+    return this._isOpen;
+  }
+  public set isOpen(value: '' | undefined) {
+    this._isOpen = value;
+  }
+
+  public nativeElement!: HTMLElement;
+
+  public fromSelect = false;
+
+  private _fromSelectOptions!: Signal<readonly Option[]>;
+
+  public set fromSelectOptions(value: Signal<readonly Option[]>) {
+    this._fromSelectOptions = value;
+  }
+
+  public options: WritableSignal<Option[]> = signal([]);
+
+  protected selectedOptions: WritableSignal<Option[]> = signal([]);
+  protected selectedOptionsValues!: Signal<unknown[]>;
+  protected display!: Signal<string>;
+
+  private onChange: (value: unknown) => void = () => {
+    return;
+  };
 
   constructor(
     private elementRef: ElementRef<HTMLElement>,
     private formGroupDirective: FormGroupDirective,
     private injector: Injector
   ) {
-    this.nativeElement = elementRef.nativeElement;
-    console.log(this.nativeElement);
+    this.nativeElement = this.elementRef.nativeElement;
     effect(() => {
       this.onChange(this.selectedOptionsValues());
     });
     effect(
       () => {
-        let disabled = this.disabled();
+        const disabled = this.disabled();
         this.isDisabled.set(disabled);
       },
       { allowSignalWrites: true }
@@ -180,8 +198,7 @@ export class MultiSelectComponent implements ControlValueAccessor {
     effect(() => {
       if (this.dropdown) {
         if (this.isDisabled()) {
-          this.dropdown.nativeElement.removeAttribute('open');
-          this.dropdownToggler.nativeElement.removeAttribute('active');
+          this.isOpen = undefined;
         }
       }
     });
@@ -190,7 +207,7 @@ export class MultiSelectComponent implements ControlValueAccessor {
     });
   }
 
-  writeValue(values: unknown[]): void {
+  public writeValue(values: unknown[]): void {
     if (this.options && this.selectedOptions) {
       if (!Array.isArray(values)) {
         this.options().forEach((option) => {
@@ -204,31 +221,33 @@ export class MultiSelectComponent implements ControlValueAccessor {
           );
         });
       }
-      let selectedOptions = this.options().filter((option) => option.selected);
+      const selectedOptions = this.options().filter(
+        (option) => option.selected
+      );
       this.selectedOptions.set(selectedOptions);
     }
   }
 
-  registerOnChange(fn: (value: unknown) => void): void {
+  public registerOnChange(fn: (value: unknown) => void): void {
     this.onChange = fn;
   }
 
-  registerOnTouched(fn: Function): void {
+  public registerOnTouched(fn: () => unknown): void {
     fn();
   }
 
-  setDisabledState(isDisabled: boolean): void {
+  public setDisabledState(isDisabled: boolean): void {
     this.isDisabled.set(isDisabled);
   }
 
-  ngAfterContentInit(): void {
+  public ngAfterContentInit(): void {
     effect(
       () => {
         let options;
         if (!this.fromSelect) options = this.children();
-        else options = this.fromSelectOptions();
+        else options = this._fromSelectOptions();
         setTimeout(() => {
-          let map = new Map<string, Option>();
+          const map = new Map<string, Option>();
           options.forEach((option) => {
             if (map.has(option.label))
               console.error(
@@ -244,43 +263,41 @@ export class MultiSelectComponent implements ControlValueAccessor {
       { allowSignalWrites: true, injector: this.injector }
     );
     this.selectedOptionsValues = computed(() => {
-      let options = this.selectedOptions();
+      const options = this.selectedOptions();
       return options.map((option) => option.value);
     });
     this.display = computed(() => {
-      let options = this.selectedOptions();
+      const options = this.selectedOptions();
       return options.map((option) => option.toString()).join(', ');
     });
     effect(
       () => {
-        let options = this.options();
-        setTimeout(() => {
-          let oldSelectedOptions = untracked(this.selectedOptions);
-          let oldSelectedOptionsLabels = oldSelectedOptions.map<string>(
-            (option) => option.label
-          );
-          options.forEach((option) => {
-            if (oldSelectedOptionsLabels.includes(option.label))
-              option.selected = true;
-          });
-          let newSelectedOptions = options.filter((option) => option.selected);
-          let combinedSelectedOptions =
-            oldSelectedOptions.concat(newSelectedOptions);
-          let map = new Map<string, Option>();
-          combinedSelectedOptions.forEach((option) => {
-            map.set(option.label, option);
-          });
-          this.selectedOptions.set(Array.from(map.values()));
-        }, 10);
+        const options = this.options();
+        const oldSelectedOptions = untracked(this.selectedOptions);
+        const oldSelectedOptionsLabels = oldSelectedOptions.map<string>(
+          (option) => option.label
+        );
+        options.forEach((option) => {
+          if (oldSelectedOptionsLabels.includes(option.label))
+            option.selected = true;
+        });
+        const newSelectedOptions = options.filter((option) => option.selected);
+        const combinedSelectedOptions =
+          oldSelectedOptions.concat(newSelectedOptions);
+        const map = new Map<string, Option>();
+        combinedSelectedOptions.forEach((option) => {
+          map.set(option.label, option);
+        });
+        this.selectedOptions.set(Array.from(map.values()));
       },
       { allowSignalWrites: true, injector: this.injector }
     );
   }
 
-  onSelectOption(optionToChangeSelect: Option) {
+  protected onSelectOption(optionToChangeSelect: Option): void {
     optionToChangeSelect.selected = !optionToChangeSelect.selected;
-    let oldSelectedOptions = this.selectedOptions();
-    let map = new Map<string, Option>();
+    const oldSelectedOptions = this.selectedOptions();
+    const map = new Map<string, Option>();
     oldSelectedOptions.forEach((option) => {
       map.set(option.label, option);
     });
@@ -293,24 +310,23 @@ export class MultiSelectComponent implements ControlValueAccessor {
     this.selectedOptions.set(Array.from(map.values()));
   }
 
-  dorpdown($event: MouseEvent) {
-    $event.preventDefault();
-    $event.stopPropagation();
+  @HostListener('click', ['$event'])
+  protected dorpdown(event: Event): void {
+    if (event.target !== this.nativeElement) return;
     if (!this.isDisabled()) {
-      this.dropdown.nativeElement.toggleAttribute('open');
-      this.dropdownToggler.nativeElement.toggleAttribute('active');
+      this.isOpen = this.isOpen === '' ? undefined : '';
     }
   }
 }
 
-class FormControlNameWithControl extends FormControlName {
+class FormControlNameWithControl<T = unknown> extends FormControlName {
   constructor(
     parent: ControlContainer,
     validators: (ValidatorFn | Validator)[],
     asyncValidators: (AsyncValidatorFn | AsyncValidator)[],
     valueAccessors: ControlValueAccessor[],
     _ngModelWarningConfig: string | null,
-    control: FormControl<unknown>
+    control: FormControl<T>
   ) {
     super(
       parent,
@@ -321,5 +337,5 @@ class FormControlNameWithControl extends FormControlName {
     );
     this.control = control;
   }
-  override control: FormControl<unknown>;
+  override control: FormControl<T>;
 }

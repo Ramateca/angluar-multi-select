@@ -8,18 +8,18 @@ import {
   ViewContainerRef,
   booleanAttribute,
   contentChildren,
-  input,
+  input, OnInit,
 } from '@angular/core';
 import { MultiSelectComponent } from './multi-select.component';
-import { HTMLOptionElementWithAnyValueType } from './option.directive';
+import { OptionDirective } from './option.directive';
 
 @Directive({
   selector: 'select[multiple]',
   standalone: true,
 })
-export class MultiSelectDiverctive {
-  private options: Signal<readonly HTMLOptionElementWithAnyValueType[]> =
-    contentChildren(HTMLOptionElementWithAnyValueType);
+export class MultiSelectDiverctive implements OnInit {
+  private options: Signal<readonly OptionDirective[]> =
+    contentChildren(OptionDirective);
   constructor(
     private select: ElementRef<HTMLSelectElement>,
     private viewContainerRef: ViewContainerRef
@@ -46,18 +46,17 @@ export class MultiSelectDiverctive {
       }
     },
   });
-  @Output() autocomplete = new EventEmitter<string>();
-  @Input('compareWith') compareWith: (a: unknown, b: unknown) => boolean = (
-    a,
-    b
-  ) => a?.toString() === b?.toString();
+  
+  @Output() readonly autocomplete = new EventEmitter<string>();
+  @Input() compareWith: (a: unknown, b: unknown) => boolean = (a, b) =>
+    a?.toString() === b?.toString();
 
   ngOnInit(): void {
-    let template = this.select.nativeElement;
-    let maybeFormControlName: string | null =
+    const template = this.select.nativeElement;
+    const maybeFormControlName: string | null =
       template.getAttribute('formControlName');
     if (template) {
-      let multiSelect =
+      const multiSelect =
         this.viewContainerRef.createComponent(MultiSelectComponent);
       multiSelect.instance.fromSelect = true;
       multiSelect.instance.required = this.isRequired;

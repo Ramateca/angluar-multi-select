@@ -1,4 +1,4 @@
-import { Component, WritableSignal, signal } from '@angular/core';
+import { Component, WritableSignal, signal, OnInit, AfterContentInit, ChangeDetectionStrategy } from '@angular/core';
 import {
   FormControl,
   FormGroup,
@@ -9,13 +9,14 @@ import { MultiSelectModule } from '../multi-select/multi-select.module';
 import { JsonPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
-type Option = {
+interface Option {
   label: string;
   value: unknown;
   selected: boolean;
 };
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-main',
   standalone: true,
   imports: [
@@ -28,9 +29,8 @@ type Option = {
   templateUrl: './main.component.html',
   styleUrl: './main.component.scss',
 })
-export class MainComponent {
+export class MainComponent implements OnInit, AfterContentInit {
   options: Option[] = [
-    { label: 'picone', value: 1, selected: false },
     { label: 'picone', value: 1, selected: true },
     { label: 'carlo', value: undefined, selected: true },
     {
@@ -54,20 +54,20 @@ export class MainComponent {
 
   group!: FormGroup;
 
-  tostring(this: { [key: string]: unknown }) {
+  tostring(this: Record<string, unknown>) {
     return this['id'];
   }
 
-  formValues: WritableSignal<Object | undefined> = signal(undefined);
+  formValues: WritableSignal<object | undefined> = signal(undefined);
 
   formDisplay(): void {
     this.formValues.set(this.group.getRawValue());
   }
 
-  isDisabled: boolean = false;
+  isDisabled = false;
 
   patchValues(): void {
-    let first = this.group.get('first');
+    const first = this.group.get('first');
     first?.reset();
   }
 
@@ -92,7 +92,7 @@ export class MainComponent {
   }
 
   switchDisable() {
-    let first = this.group.get('first');
+    const first = this.group.get('first');
     if (first?.enabled) first?.disable();
     else first?.enable();
   }
