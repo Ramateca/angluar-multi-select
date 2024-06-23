@@ -14,21 +14,40 @@ import {
   imports: [],
   template: '<ng-content />',
 })
-export class OptionDirective implements AfterContentInit {
+export class Option implements AfterContentInit {
   @Input() value?: unknown;
   @Input() ngValue?: unknown;
-  @Input() disabled = false;
-  @Input() label!: string;
-  @Input() selected = false;
-
-  @HostBinding('attr.selected')
-  get isSelected(): '' | undefined {
-    return this.selected ? '' : undefined;
-  }
 
   @HostBinding('attr.disabled')
-  get isDisabled(): '' | undefined {
-    return this.disabled ? '' : undefined;
+  private _disabled: '' | undefined = undefined;
+
+  @Input()
+  public set disabled(value: unknown) {
+    if (value !== undefined && value !== null) {
+      if (value === false) this._disabled = undefined;
+      else this._disabled = '';
+    } else this._disabled = undefined;
+  }
+
+  get disabled(): boolean {
+    return this._disabled !== undefined;
+  }
+
+  @Input() label!: string;
+
+  @HostBinding('attr.selected')
+  private _selected: '' | undefined = undefined;
+
+  @Input()
+  public set selected(value: unknown) {
+    if (value !== undefined && value !== null) {
+      if (value === false) this._selected = undefined;
+      else this._selected = '';
+    } else this._selected = undefined;
+  }
+
+  get selected(): boolean {
+    return this._selected !== undefined;
   }
 
   constructor(private el: ElementRef<HTMLOptionElement>) {}
@@ -41,6 +60,6 @@ export class OptionDirective implements AfterContentInit {
   }
 
   toString(): string {
-    return this.label || '';
+    return this.label ?? '';
   }
 }

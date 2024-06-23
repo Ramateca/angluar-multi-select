@@ -1,4 +1,4 @@
-import { Component, WritableSignal, signal, OnInit, AfterContentInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, WritableSignal, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {
   FormControl,
   FormGroup,
@@ -29,7 +29,7 @@ interface Option {
   templateUrl: './main.component.html',
   styleUrl: './main.component.scss',
 })
-export class MainComponent implements OnInit, AfterContentInit {
+export class MainComponent implements OnInit {
   options: Option[] = [
     { label: 'picone', value: 1, selected: true },
     { label: 'carlo', value: undefined, selected: true },
@@ -52,7 +52,9 @@ export class MainComponent implements OnInit, AfterContentInit {
     },
   ];
 
-  group!: FormGroup;
+  group = new FormGroup({
+    first: new FormControl([]),
+  });
 
   tostring(this: Record<string, unknown>) {
     return this['id'];
@@ -75,12 +77,6 @@ export class MainComponent implements OnInit, AfterContentInit {
 
   ngOnInit(): void {
     this.initialOptions = this.options;
-  }
-
-  ngAfterContentInit(): void {
-    this.group = new FormGroup({
-      first: new FormControl<unknown[]>([]),
-    });
   }
 
   onAutocomplete(string: string): void {

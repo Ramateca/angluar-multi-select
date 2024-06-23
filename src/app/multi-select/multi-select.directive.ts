@@ -11,15 +11,15 @@ import {
   input, OnInit,
 } from '@angular/core';
 import { MultiSelectComponent } from './multi-select.component';
-import { OptionDirective } from './option.directive';
+import { Option } from './option.directive';
 
 @Directive({
   selector: 'select[multiple]',
   standalone: true,
 })
 export class MultiSelectDiverctive implements OnInit {
-  private options: Signal<readonly OptionDirective[]> =
-    contentChildren(OptionDirective);
+  private options: Signal<readonly Option[]> =
+    contentChildren(Option);
   constructor(
     private select: ElementRef<HTMLSelectElement>,
     private viewContainerRef: ViewContainerRef

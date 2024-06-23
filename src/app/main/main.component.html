@@ -1,19 +1,37 @@
-<a [routerLink]="[ '/test-view' ]">test view</a>
-<br>
-<button type="button" class="btn btn-secondary" (click)="switchDisable()">{{ isDisabled ? 'Enable' : 'Disable'}}</button>
-<button type="button" class="btn btn-secondary" (click)="patchValues()">Patch Values</button>
+<a [routerLink]="['/test-view']">test view</a>
+<br />
+<button type="button" class="btn btn-secondary" (click)="switchDisable()">
+  {{ isDisabled ? "Enable" : "Disable" }}
+</button>
+<button type="button" class="btn btn-secondary" (click)="patchValues()">
+  Patch Values
+</button>
 <form [formGroup]="group">
-  <select multiple placeholer="Seleziona un utente" formControlName="first" (autocomplete)="onAutocomplete($event)">
+  <multi-select placeholer="Seleziona un utente" formControlName="first">
     @for (option of options; track option) {
-    <option [value]="option.value" [selected]="option.selected">{{ option.label }}</option>
+    <option [value]="option.value" [selected]="option.selected">
+      {{ option.label }}
+    </option>
     }
-  </select>
+  </multi-select>
   <br />
-  <button type="submit" class="btn btn-primary" [disabled]="!group.valid" (click)="formDisplay()">
+  <select>
+    <option value="1" selected></option>
+    <option value="2"></option>
+    <option value="3"></option>
+    <option value="4"></option>
+    <option value="5"></option>
+  </select>
+  <button
+    type="submit"
+    class="btn btn-primary"
+    [disabled]="!group.valid"
+    (click)="formDisplay()"
+  >
     leggi form
   </button>
 
   <div>
-    {{ (formValues() | json) || '' }}
+    {{ (formValues() | json) || "" }}
   </div>
 </form>

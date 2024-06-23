@@ -1,6 +1,4 @@
-<span class="multi-select-display-placeholder">{{
-  display() || placeholder()
-}}</span>
+{{ display() || placeholder() }}
 <div #dropdown class="multi-select-dropdown-menu">
   @if (autocomplete.observed) {
   <label for="autocomplete-input" class="visually-hidden">Options Filter</label>
@@ -10,18 +8,18 @@
     class="multi-select-autocomplete-input"
     [formControl]="autocompleteControl"
   />
-  } @else {} @for (option of options(); track option.label; let first = $first; let
-  index = $index) {
-    <option
-      class="multi-select-option"
-      [tabindex]="first ? 0 : -1"
-      [ariaSelected]="option.selected"
-      [selected]="option.selected"
-      [disabled]="option.disabled"
-      (click)="onSelectOption(option)"
-      (keydown.enter)="onSelectOption(option)"
-    >
-      {{ option.label }}
-    </option>
+  } @else {} @for (option of options(); track option.label; let first = $first;
+  let index = $index) {
+  <option
+    class="multi-select-option"
+    [tabindex]="first ? 0 : -1"
+    [ariaSelected]="option.selected"
+    [selected]="option.selected"
+    [disabled]="option.disabled"
+    (click)="onSelectOption($event, option)"
+    (keydown.enter)="onSelectOption($event, option)"
+  >
+    {{ option.label }}
+  </option>
   }
 </div>

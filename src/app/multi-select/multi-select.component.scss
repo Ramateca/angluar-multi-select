@@ -1,9 +1,10 @@
 $check-mark: "\2714";
 
 :host {
-  display: inline-block;
+  display: inline-grid;
 
-  flex: 1;
+  width: 100%;
+
   cursor: pointer;
 
   text-wrap: nowrap;
@@ -13,7 +14,6 @@ $check-mark: "\2714";
   border-radius: 1vmin;
 
   position: relative;
-  display: flex;
   min-height: 30px;
 
   &:not(:focus) {
@@ -21,16 +21,18 @@ $check-mark: "\2714";
   }
   background-color: #f2f2f2;
 
-  .multi-select-display-placeholder {
-    margin: 5px 10px;
-    pointer-events: none !important;
-  }
+  padding: 5px 10px;
 
   &:focus,
-  [open],
+  &[open],
   &:focus-visible {
     box-shadow: 0 0 3px 0.2rem #858585;
     outline: 0;
+  }
+  &[open] {
+    .multi-select-dropdown-menu {
+      display: block;
+    }
   }
 
   &.with-autocomplete[open] {
@@ -68,8 +70,7 @@ $check-mark: "\2714";
   top: 100%;
 
   padding: 1vmin 0;
-  border-bottom-left-radius: 1vmin;
-  border-bottom-right-radius: 1vmin;
+  border-radius: 1vmin;
 
   &::-webkit-scrollbar {
     width: 5px;
@@ -136,7 +137,6 @@ $check-mark: "\2714";
 }
 
 .visually-hidden {
-  position: absolute;
   position: absolute !important;
   width: 1px !important;
   height: 1px !important;

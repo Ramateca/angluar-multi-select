@@ -19,6 +19,7 @@ import {
   AfterContentInit,
   HostBinding,
   HostListener,
+  forwardRef,
 } from '@angular/core';
 import {
   AsyncValidator,
@@ -33,21 +34,20 @@ import {
   Validator,
   ValidatorFn,
 } from '@angular/forms';
-import { OptionDirective } from './option.directive';
-
-type Option = OptionDirective;
+import { Option } from './option.directive';
 
 @Component({
   selector: 'multi-select',
   standalone: true,
-  imports: [ReactiveFormsModule, OptionDirective],
+  imports: [ReactiveFormsModule, Option],
   templateUrl: './multi-select.component.html',
   styleUrl: './multi-select.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
-      useExisting: MultiSelectComponent,
+      // eslint-disable-next-line @angular-eslint/no-forward-ref
+      useExisting: forwardRef(() => MultiSelectComponent),
       multi: true,
     },
   ],
@@ -57,14 +57,32 @@ export class MultiSelectComponent
 {
   @ViewChild('dropdown') private dropdown!: ElementRef<HTMLDivElement>;
   private children: Signal<readonly Option[]> =
-    contentChildren(OptionDirective);
+    contentChildren(Option);
 
   @Input() compareWith: (a: unknown, b: unknown) => boolean = (a, b) =>
     a?.toString() === b?.toString();
-  disabled = input(false, {
-    alias: 'disabled',
-    transform: booleanAttribute,
-  });
+
+  private _disabled: WritableSignal<'' | undefined> = signal<'' | undefined>(
+    undefined
+  );
+
+  public get disabled(): '' | undefined {
+    return this._disabled();
+  }
+
+  @Input()
+  public set disabled(value: unknown) {
+    if (value !== undefined && value !== null) {
+      if (value === false) this._disabled.set(undefined);
+      else this._disabled.set('');
+    } else this._disabled.set(undefined);
+  }
+
+  @HostBinding('attr.disabled')
+  private get disabledAttribute() {
+    return this.disabled;
+  }
+
   required = input(false, {
     alias: 'required',
     transform: booleanAttribute,
@@ -99,7 +117,7 @@ export class MultiSelectComponent
 
   private _formcontrolname: string | undefined;
 
-  @HostBinding('[attr.formcontrolname]')
+  @HostBinding('attr.formcontrolname')
   public get formcontrolname(): string | undefined {
     return this._formcontrolname;
   }
@@ -146,15 +164,13 @@ export class MultiSelectComponent
 
   public autocompleteControl = new FormControl();
 
-  @HostBinding('[attr.disabled]')
-  public isDisabled: WritableSignal<boolean> = signal<boolean>(this.disabled());
-
   private _isOpen: '' | undefined = undefined;
 
   @HostBinding('attr.open')
   public get isOpen(): '' | undefined {
     return this._isOpen;
   }
+
   public set isOpen(value: '' | undefined) {
     this._isOpen = value;
   }
@@ -188,16 +204,9 @@ export class MultiSelectComponent
     effect(() => {
       this.onChange(this.selectedOptionsValues());
     });
-    effect(
-      () => {
-        const disabled = this.disabled();
-        this.isDisabled.set(disabled);
-      },
-      { allowSignalWrites: true }
-    );
     effect(() => {
       if (this.dropdown) {
-        if (this.isDisabled()) {
+        if (this._disabled() !== undefined) {
           this.isOpen = undefined;
         }
       }
@@ -237,7 +246,7 @@ export class MultiSelectComponent
   }
 
   public setDisabledState(isDisabled: boolean): void {
-    this.isDisabled.set(isDisabled);
+    this.disabled = isDisabled ? '' : undefined;
   }
 
   public ngAfterContentInit(): void {
@@ -294,7 +303,9 @@ export class MultiSelectComponent
     );
   }
 
-  protected onSelectOption(optionToChangeSelect: Option): void {
+  protected onSelectOption(event: Event, optionToChangeSelect: Option): void {
+    event.stopPropagation();
+    console.log(optionToChangeSelect);
     optionToChangeSelect.selected = !optionToChangeSelect.selected;
     const oldSelectedOptions = this.selectedOptions();
     const map = new Map<string, Option>();
@@ -310,10 +321,9 @@ export class MultiSelectComponent
     this.selectedOptions.set(Array.from(map.values()));
   }
 
-  @HostListener('click', ['$event'])
-  protected dorpdown(event: Event): void {
-    if (event.target !== this.nativeElement) return;
-    if (!this.isDisabled()) {
+  @HostListener('click')
+  protected dorpdown(): void {
+    if (this.disabled === undefined) {
       this.isOpen = this.isOpen === '' ? undefined : '';
     }
   }
